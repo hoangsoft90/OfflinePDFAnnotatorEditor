@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "424319538394",
+    "project_id": "offlinepdfannotatoreditor",
+    "storage_bucket": "offlinepdfannotatoreditor.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:424319538394:android:45748f844af9de578c81e3",
+        "android_client_info": {
+          "package_name": "com.offlinepdf.annotator"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCP7d-HdwXQWJCqCWR0-aBH567Dn7rbTLk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
