@@ -1,9 +1,9 @@
 name: Build Android APK
 
 on:
+  workflow_dispatch:            # manual "Run workflow" button in the Actions tab
   push:
-    branches: [main]
-  workflow_dispatch:
+    branches: [main]            # auto-build on every push to main
 
 jobs:
   build-apk:
@@ -18,31 +18,31 @@ jobs:
           node-version: 22
           cache: npm
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Setup Java
+      - name: Setup Java (JDK 17 — required for Expo SDK 52+ / RN 0.7x+)
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 17
+          java-version: '17'
 
-      - name: Set up Android SDK (cmdline-tools)
+      - name: Setup Android SDK (accepts licenses + build-tools)
         uses: android-actions/setup-android@v3
 
-      - name: Install Android SDK components
-        run: |
-          yes | sdkmanager --licenses > /dev/null
-          sdkmanager "platform-tools" "platforms;android-36" "build-tools;36.0.0" "ndk;27.1.12297006"
+      - name: Cache Gradle
+        uses: gradle/actions/setup-gradle@v4
 
-      - name: Prebuild (generate android/)
-        run: npx expo prebuild --platform android --no-install
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate native project (expo prebuild)
+        run: npx expo prebuild --platform android --clean --no-install
+        env:
+          CI: '1'
 
       - name: Build release APK
         working-directory: android
         run: ./gradlew assembleRelease
 
-      - name: Upload APK artifact
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: app-release-apk
