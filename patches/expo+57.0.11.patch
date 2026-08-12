@@ -1,0 +1,32 @@
+diff --git a/node_modules/expo/src/winter/runtime.native.ts b/node_modules/expo/src/winter/runtime.native.ts
+--- a/node_modules/expo/src/winter/runtime.native.ts
++++ b/node_modules/expo/src/winter/runtime.native.ts
+@@ -32,7 +32,27 @@
+ install('structuredClone', () => require('@ungap/structured-clone').default);
+ 
+ installFormDataPatch(FormData);
+-installAbortSignalPatch(AbortSignal);
++
++// PATCH (crash-fix): `AbortSignal` is a lazy global polyfilled by React
++// Native's `setUpXHR` (from `abort-controller`). In release Hermes bundles
++// it can still be `undefined` when this module runs, which made
++// `installAbortSignalPatch` throw `Cannot read property 'timeout' of
++// undefined` at bundle load (app died at startup). Self-heal from the same
++// polyfill package, then guard the patch call.
++if (typeof AbortSignal === 'undefined') {
++  try {
++    // @ts-expect-error: `require` is injected by the bundler.
++    const abortControllerModule = require('abort-controller');
++    install('AbortController', () => abortControllerModule.AbortController);
++    install('AbortSignal', () => abortControllerModule.AbortSignal);
++  } catch {
++    // Leave the globals undefined; an actual `fetch` call would then surface
++    // a clearer error later instead of crashing at bundle load.
++  }
++}
++if (typeof AbortSignal !== 'undefined') {
++  installAbortSignalPatch(AbortSignal);
++}
+ 
+ // Polyfill async iterator symbol for Hermes.
+ // @ts-expect-error: readonly property only applies when the engine supports it
