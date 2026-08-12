@@ -171,6 +171,10 @@ export function AnnotationCanvas({
   const selectGesture = Gesture.Pan()
     .enabled(activeTool === 'select' || activeTool === 'eraser')
     .minDistance(2)
+    // RNGH v2 + Reanimated runs callbacks as worklets on the UI thread by
+    // default; this gesture calls JS functions (screenToPdfPoint, findHit,
+    // execute, setState) so it must run on the JS thread instead.
+    .runOnJS(true)
     // eslint-disable-next-line react-hooks/refs -- gesture callbacks run on events, not render
     .onStart((e) => {
       const pt = screenToPdfPoint({ x: e.x, y: e.y }, pageHeightPts, scale);

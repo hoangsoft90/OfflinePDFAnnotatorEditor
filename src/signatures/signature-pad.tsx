@@ -31,6 +31,9 @@ export const SignaturePad = forwardRef<SignaturePadHandle, { onChange?: (isEmpty
 
   const gesture = Gesture.Pan()
     .minDistance(0)
+    // Callbacks mutate refs + setState — run on the JS thread (RNGH v2
+    // worklets on the UI thread would see these closures as undefined).
+    .runOnJS(true)
     .onStart((e) => {
       currentPoints.current = [{ x: e.x, y: e.y }];
       currentPath.current = `M${e.x},${e.y}`;
