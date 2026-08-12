@@ -76,6 +76,7 @@ export function ViewerScreen() {
   const toolbarWrapRef = useRef<View>(null);
   const undoRef = useRef<View>(null);
   const pendingIntroRef = useRef(false);
+  const annotatingRef = useRef(false);
   const [introSteps, setIntroSteps] = useState<SpotlightStep[]>([]);
   const [introVisible, setIntroVisible] = useState(false);
   const [introStepIndex, setIntroStepIndex] = useState(0);
@@ -265,13 +266,13 @@ export function ViewerScreen() {
 
   // ---- annotation-intro spotlight (guidance) ----
   const toggleAnnotating = useCallback(() => {
-    setAnnotating((v) => {
-      const next = !v;
-      // First time the user enables annotating → schedule the spotlight; it
-      // fires once the toolbar has actually laid out (measured below).
-      if (next && annotationIntro.showSpotlight) pendingIntroRef.current = true;
-      return next;
-    });
+    const next = !annotatingRef.current;
+    annotatingRef.current = next;
+    // First time the user enables annotating → schedule the spotlight; it
+    // fires once the toolbar has actually laid out (measured below). Side
+    // effect kept OUTSIDE the state updater (updaters must stay pure).
+    if (next && annotationIntro.showSpotlight) pendingIntroRef.current = true;
+    setAnnotating(next);
   }, [annotationIntro.showSpotlight]);
 
   const handleToolbarLayout = useCallback(() => {

@@ -125,7 +125,9 @@ export function AnnotationToolbar({ onOpenSignature, undoRef }: Props) {
       ) : null}
 
       <View style={styles.secondRow}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: Spacing.two, alignItems: 'center' }}>
+        {/* Swatches + style scroll. Undo/redo live OUTSIDE the ScrollView so the
+            contextual-helper popover is never clipped by it on Android. */}
+        <ScrollView style={{ flex: 1 }} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: Spacing.two, alignItems: 'center' }}>
           {palette.swatches.map((c) => (
             <Pressable
               key={c}
@@ -137,31 +139,32 @@ export function AnnotationToolbar({ onOpenSignature, undoRef }: Props) {
           <Pressable onPress={() => setShowStyle((v) => !v)} style={[styles.toolBtn, showStyle && { backgroundColor: palette.backgroundSelected }]}>
             <Ionicons name="options-outline" size={18} color={palette.textSecondary} />
           </Pressable>
-          <View style={[styles.sep, { backgroundColor: palette.border }]} />
-
-          {/* Undo — contextual helper when the stack is empty (guidance). */}
-          <View ref={undoRef} collapsable={false}>
-            {canUndo ? (
-              <Pressable onPress={undo} style={styles.toolBtn} accessibilityLabel="Hoàn tác">
-                <Ionicons name="arrow-undo-outline" size={18} color={palette.text} />
-              </Pressable>
-            ) : (
-              <ContextualHelper
-                content={undoHelper}
-                placement="top"
-                align="right"
-                onOpen={undoEmptyGuidance.markHelperOpened}>
-                <View style={[styles.toolBtn, { opacity: 0.3 }]} accessibilityLabel="Hoàn tác (chưa có thao tác)">
-                  <Ionicons name="arrow-undo-outline" size={18} color={palette.text} />
-                </View>
-              </ContextualHelper>
-            )}
-          </View>
-
-          <Pressable onPress={redo} disabled={!canRedo} style={[styles.toolBtn, !canRedo && { opacity: 0.3 }]}>
-            <Ionicons name="arrow-redo-outline" size={18} color={palette.text} />
-          </Pressable>
         </ScrollView>
+
+        <View style={[styles.sep, { backgroundColor: palette.border }]} />
+
+        {/* Undo — contextual helper when the stack is empty (guidance). */}
+        <View ref={undoRef} collapsable={false}>
+          {canUndo ? (
+            <Pressable onPress={undo} style={styles.toolBtn} accessibilityLabel="Hoàn tác">
+              <Ionicons name="arrow-undo-outline" size={18} color={palette.text} />
+            </Pressable>
+          ) : (
+            <ContextualHelper
+              content={undoHelper}
+              placement="top"
+              align="right"
+              onOpen={undoEmptyGuidance.markHelperOpened}>
+              <View style={[styles.toolBtn, { opacity: 0.3 }]} accessibilityLabel="Hoàn tác (chưa có thao tác)">
+                <Ionicons name="arrow-undo-outline" size={18} color={palette.text} />
+              </View>
+            </ContextualHelper>
+          )}
+        </View>
+
+        <Pressable onPress={redo} disabled={!canRedo} style={[styles.toolBtn, !canRedo && { opacity: 0.3 }]}>
+          <Ionicons name="arrow-redo-outline" size={18} color={palette.text} />
+        </Pressable>
       </View>
 
       {showStyle ? (

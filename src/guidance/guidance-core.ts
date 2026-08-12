@@ -59,6 +59,9 @@ export class GuidanceCore {
         })
         .finally(() => {
           this.loaded = true;
+          // Components may have mounted and read defaults before the async
+          // load resolved — re-render them now that real state is in place.
+          this.notify();
         });
     }
     return this.loadPromise;
