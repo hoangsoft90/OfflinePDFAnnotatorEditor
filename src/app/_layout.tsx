@@ -11,6 +11,7 @@ import { createMetadataRepo } from '@/db/documents-repo';
 import { useMetadataStore } from '@/store/use-metadata-store';
 import { ThemedText } from '@/components/themed-text';
 import { initAds } from '@/ads/init';
+import { guidance } from '@/guidance/guidance-store';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -25,6 +26,9 @@ function RootProviders({ children }: { children: React.ReactNode }) {
       // AdMob bootstrap (consent → config → initialize). Fire-and-forget so
       // app startup is never blocked; ads become ready in the background.
       void initAds();
+      // In-app guidance state (in-app-guidance change): preload so the first
+      // screen sees persisted show/skip decisions instead of defaults.
+      await guidance.ensureLoaded();
       await SplashScreen.hideAsync();
     }
     if (!initialized && !initError) {

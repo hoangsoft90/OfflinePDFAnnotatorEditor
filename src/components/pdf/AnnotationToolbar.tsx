@@ -1,10 +1,15 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useState } from 'react';
+import { useState, type Ref } from 'react';
 import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
 import { useCanRedo, useCanUndo, useCommandStack } from '@/commands/stack';
+import { GuidanceBadge } from '@/guidance/components/GuidanceBadge';
+import { GuidanceTooltip } from '@/guidance/components/GuidanceTooltip';
+import { ContextualHelper } from '@/guidance/components/ContextualHelper';
+import { getFeatureDef } from '@/guidance/registry';
+import { useGuidance } from '@/guidance/use-guidance';
 import { usePalette } from '@/store/use-theme-store';
 import { useToolStore } from '@/store/use-tool-store';
 import { TOOL_ORDER, type ToolId } from '@/tools/types';
@@ -39,7 +44,13 @@ const TOOL_LABELS: Record<ToolId, string> = {
   signature: 'Chữ ký',
 };
 
-export function AnnotationToolbar({ onOpenSignature }: { onOpenSignature?: () => void }) {
+interface Props {
+  onOpenSignature?: () => void;
+  /** Optional ref to the undo control (spotlight target measuring). */
+  undoRef?: Ref<View>;
+}
+
+export function AnnotationToolbar({ onOpenSignature, undoRef }: Props) {
   const palette = usePalette();
   const { activeTool, setTool, color, setColor, opacity, setOpacity, strokeWidth, setStrokeWidth, pendingText, setPendingText } = useToolStore();
   const undo = useCommandStack((s) => s.undo);
@@ -48,20 +59,47 @@ export function AnnotationToolbar({ onOpenSignature }: { onOpenSignature?: () =>
   const canRedo = useCanRedo();
   const [showStyle, setShowStyle] = useState(false);
 
+  // In-app guidance (in-app-guidance change): signature badge + first-tap
+  // tooltip; undo contextual helper when the stack is empty.
+  const sig = useGuidance('signature-create');
+  const undoEmptyGuidance = useGuidance('undo-empty');
+  const toolsIntro = useGuidance('annotation-intro');
+  const sigDef = getFeatureDef('signature-create');
+  const undoHelper = getFeatureDef('undo-empty').helper!;
+
+  const handleToolPress = (tool: ToolId) => {
+    if (tool === 'signature') {
+      // First tap: teach (one-shot while unseen), then proceed to the picker.
+      if (sig.state.status === 'unseen') sig.markShown('tooltip');
+      sig.markUsed();
+      onOpenSignature?.();
+      return;
+    }
+    toolsIntro.markUsed();
+    setTool(tool);
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: palette.backgroundElevated, borderTopColor: palette.border }]}>
+      {/* Floating signature tooltip — sits over the toolbar's right side
+          (signature is the rightmost tool); anchor mode would be clipped by
+          the horizontal ScrollView on Android. */}
+      <GuidanceTooltip
+        visible={sig.showTooltip}
+        text={sigDef.tooltip ?? ''}
+        placement="top"
+        align="right"
+        onDismiss={sig.markDismissed}
+        bubbleStyle={styles.sigTooltip}
+      />
+
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.toolRow}>
         {TOOL_ORDER.map((tool) => (
           <Pressable
             key={tool}
-            onPress={() => {
-              if (tool === 'signature') {
-                onOpenSignature?.();
-                return;
-              }
-              setTool(tool);
-            }}
+            onPress={() => handleToolPress(tool)}
             style={[styles.toolBtn, activeTool === tool && { backgroundColor: palette.backgroundSelected }]}>
+            {tool === 'signature' && sig.showBadge ? <GuidanceBadge /> : null}
             <Ionicons
               name={TOOL_ICONS[tool]}
               size={20}
@@ -100,9 +138,26 @@ export function AnnotationToolbar({ onOpenSignature }: { onOpenSignature?: () =>
             <Ionicons name="options-outline" size={18} color={palette.textSecondary} />
           </Pressable>
           <View style={[styles.sep, { backgroundColor: palette.border }]} />
-          <Pressable onPress={undo} disabled={!canUndo} style={[styles.toolBtn, !canUndo && { opacity: 0.3 }]}>
-            <Ionicons name="arrow-undo-outline" size={18} color={palette.text} />
-          </Pressable>
+
+          {/* Undo — contextual helper when the stack is empty (guidance). */}
+          <View ref={undoRef} collapsable={false}>
+            {canUndo ? (
+              <Pressable onPress={undo} style={styles.toolBtn} accessibilityLabel="Hoàn tác">
+                <Ionicons name="arrow-undo-outline" size={18} color={palette.text} />
+              </Pressable>
+            ) : (
+              <ContextualHelper
+                content={undoHelper}
+                placement="top"
+                align="right"
+                onOpen={undoEmptyGuidance.markHelperOpened}>
+                <View style={[styles.toolBtn, { opacity: 0.3 }]} accessibilityLabel="Hoàn tác (chưa có thao tác)">
+                  <Ionicons name="arrow-undo-outline" size={18} color={palette.text} />
+                </View>
+              </ContextualHelper>
+            )}
+          </View>
+
           <Pressable onPress={redo} disabled={!canRedo} style={[styles.toolBtn, !canRedo && { opacity: 0.3 }]}>
             <Ionicons name="arrow-redo-outline" size={18} color={palette.text} />
           </Pressable>
@@ -159,4 +214,5 @@ const styles = StyleSheet.create({
   stylePanel: { marginHorizontal: Spacing.two, marginTop: Spacing.two, borderRadius: Radius.md, padding: Spacing.two, gap: Spacing.two },
   styleRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
   sliderDot: { flex: 1, height: 8, borderRadius: 4 },
+  sigTooltip: { position: 'absolute', bottom: 56, right: Spacing.two },
 });

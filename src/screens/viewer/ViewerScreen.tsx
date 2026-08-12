@@ -33,6 +33,9 @@ import { detectConflict } from '@/project/conflict';
 import { DocumentMenuModal } from '@/components/pdf/DocumentMenuModal';
 import { AdBanner } from '@/ads/AdBanner';
 import { showInterstitialIfDue } from '@/ads/interstitial-manager';
+import { SpotlightOverlay, type SpotlightStep } from '@/guidance/components/SpotlightOverlay';
+import { getFeatureDef } from '@/guidance/registry';
+import { useGuidance } from '@/guidance/use-guidance';
 
 export function ViewerScreen() {
   const { docId } = useLocalSearchParams<{ docId: string }>();
@@ -64,6 +67,19 @@ export function ViewerScreen() {
   const [showSignaturePicker, setShowSignaturePicker] = useState(false);
   const searchController = useRef<{ cancel: () => void } | null>(null);
   const openedAtRef = useRef(0);
+
+  // ---- in-app guidance (in-app-guidance change) ----
+  const annotationIntro = useGuidance('annotation-intro');
+  const searchScanned = useGuidance('search-scanned');
+  const searchScannedHelper = getFeatureDef('search-scanned').helper!;
+  const introDef = getFeatureDef('annotation-intro');
+  const toolbarWrapRef = useRef<View>(null);
+  const undoRef = useRef<View>(null);
+  const pendingIntroRef = useRef(false);
+  const [introSteps, setIntroSteps] = useState<SpotlightStep[]>([]);
+  const [introVisible, setIntroVisible] = useState(false);
+  const [introStepIndex, setIntroStepIndex] = useState(0);
+  const [searchTried, setSearchTried] = useState(false);
 
   const docName = useMetadataStore((s) => s.recents.find((d) => d.id === docId)?.name ?? 'Tài liệu');
   const activeTool = useToolStore((s) => s.activeTool);
@@ -197,15 +213,23 @@ export function ViewerScreen() {
     searchController.current?.cancel();
     if (!query.trim() || pageIds.length === 0) {
       setSearchResults([]);
+      setSearchTried(false);
       return;
     }
     setSearching(true);
     const { promise, controller } = searchDocument(engine, pageIds, query);
     searchController.current = controller;
     promise
-      .then((hits) => setSearchResults(hits))
+      .then((hits) => {
+        setSearchResults(hits);
+        if (hits.length === 0) {
+          // Scanned pages have no text layer — explain via the helper copy.
+          searchScanned.markHelperOpened();
+          setSearchTried(true);
+        }
+      })
       .finally(() => setSearching(false));
-  }, [engine, pageIds, query]);
+  }, [engine, pageIds, query, searchScanned]);
 
   const selectHit = useCallback(
     (hit: SearchHit) => {
@@ -238,6 +262,71 @@ export function ViewerScreen() {
   const openSignaturePad = useCallback(() => {
     setShowSignaturePicker(true);
   }, []);
+
+  // ---- annotation-intro spotlight (guidance) ----
+  const toggleAnnotating = useCallback(() => {
+    setAnnotating((v) => {
+      const next = !v;
+      // First time the user enables annotating → schedule the spotlight; it
+      // fires once the toolbar has actually laid out (measured below).
+      if (next && annotationIntro.showSpotlight) pendingIntroRef.current = true;
+      return next;
+    });
+  }, [annotationIntro.showSpotlight]);
+
+  const handleToolbarLayout = useCallback(() => {
+    if (!pendingIntroRef.current) return;
+    pendingIntroRef.current = false;
+    toolbarWrapRef.current?.measureInWindow((x, y, width, height) => {
+      if (width <= 0 || height <= 0) return;
+      const steps = (introDef.steps ?? []).map((s, i) => ({
+        ...s,
+        target: i === 0 ? { x, y, width, height } : null,
+      }));
+      if (steps.length === 0) return;
+      annotationIntro.markShown('spotlight');
+      setIntroSteps(steps);
+      setIntroStepIndex(0);
+      setIntroVisible(true);
+    });
+  }, [annotationIntro, introDef]);
+
+  const closeIntro = useCallback(() => {
+    setIntroVisible(false);
+    setIntroStepIndex(0);
+  }, []);
+
+  const handleIntroNext = useCallback(() => {
+    if (introStepIndex >= introSteps.length - 1) {
+      annotationIntro.markCompleted();
+      closeIntro();
+      return;
+    }
+    setIntroStepIndex((i) => i + 1);
+  }, [introStepIndex, introSteps.length, annotationIntro, closeIntro]);
+
+  const handleIntroSkip = useCallback(() => {
+    annotationIntro.markDismissed();
+    closeIntro();
+  }, [annotationIntro, closeIntro]);
+
+  const handleIntroTargetTap = useCallback(() => {
+    // User tapped the highlighted toolbar → they are now using the feature.
+    annotationIntro.markCompleted();
+    closeIntro();
+  }, [annotationIntro, closeIntro]);
+
+  // Measure the undo control when the second spotlight step becomes active.
+  useEffect(() => {
+    if (!introVisible || introStepIndex !== 1) return;
+    undoRef.current?.measureInWindow((x, y, width, height) => {
+      if (width > 0 && height > 0) {
+        setIntroSteps((prev) =>
+          prev.map((s, i) => (i === 1 ? { ...s, target: { x, y, width, height } } : s))
+        );
+      }
+    });
+  }, [introVisible, introStepIndex]);
 
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -355,7 +444,7 @@ export function ViewerScreen() {
         <Pressable onPress={() => setSearchOpen((v) => !v)} hitSlop={8} style={styles.iconBtn}>
           <Ionicons name="search-outline" size={22} color={palette.text} />
         </Pressable>
-        <Pressable onPress={() => setAnnotating((v) => !v)} hitSlop={8} style={[styles.iconBtn, annotating && { backgroundColor: palette.backgroundSelected }]}>
+        <Pressable onPress={toggleAnnotating} hitSlop={8} style={[styles.iconBtn, annotating && { backgroundColor: palette.backgroundSelected }]}>
           <Ionicons name="color-wand-outline" size={22} color={annotating ? palette.primary : palette.text} />
         </Pressable>
         <Pressable onPress={openOrganizer} hitSlop={8} style={styles.iconBtn}>
@@ -403,6 +492,14 @@ export function ViewerScreen() {
               ))}
             </View>
           ) : null}
+          {!searching && searchTried && query.trim() !== '' && searchResults.length === 0 ? (
+            <View style={[styles.searchEmpty, { backgroundColor: palette.backgroundElement }]}>
+              <Ionicons name="information-circle-outline" size={16} color={palette.textSecondary} />
+              <ThemedText type="caption" color="textSecondary" style={{ flex: 1 }}>
+                {searchScannedHelper.why} {searchScannedHelper.how}
+              </ThemedText>
+            </View>
+          ) : null}
         </View>
       ) : null}
 
@@ -434,7 +531,9 @@ export function ViewerScreen() {
       {/* Annotation toolbar — toggled via the wand button (so a fresh doc is
           never stuck in read-only; select mode with annotations also shows it) */}
       {annotating || activeTool !== 'select' || pageAnnotations.length > 0 ? (
-        <AnnotationToolbar onOpenSignature={openSignaturePad} />
+        <View ref={toolbarWrapRef} onLayout={handleToolbarLayout}>
+          <AnnotationToolbar onOpenSignature={openSignaturePad} undoRef={undoRef} />
+        </View>
       ) : (
         <SafeAreaView edges={['bottom']} style={[styles.bottomBar, { borderTopColor: palette.border }]}>
           <Pressable onPress={() => goToPage(pageIndex - 1)} disabled={pageIndex === 0} style={[styles.iconBtn, pageIndex === 0 && { opacity: 0.3 }]}>
@@ -471,6 +570,17 @@ export function ViewerScreen() {
         onShare={() => void handleShare()}
         onDuplicate={() => void handleDuplicate()}
       />
+
+      {/* Annotation-intro spotlight — rendered last so it sits above the toolbar. */}
+      {introVisible ? (
+        <SpotlightOverlay
+          steps={introSteps}
+          index={introStepIndex}
+          onNext={handleIntroNext}
+          onSkip={handleIntroSkip}
+          onTargetTap={handleIntroTargetTap}
+        />
+      ) : null}
     </ThemedView>
   );
 }
@@ -497,4 +607,5 @@ const styles = StyleSheet.create({
   searchInput: { flex: 1, fontSize: 15, paddingVertical: Spacing.two },
   searchResults: { position: 'absolute', top: 52, left: Spacing.two, right: Spacing.two, maxHeight: 260, borderRadius: Radius.lg, padding: Spacing.two, zIndex: 10, elevation: 4 },
   resultRow: { flexDirection: 'row', alignItems: 'center', padding: Spacing.two, borderRadius: Radius.md, marginTop: Spacing.one },
+  searchEmpty: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two, marginTop: Spacing.one, padding: Spacing.two, borderRadius: Radius.md },
 });

@@ -39,8 +39,9 @@ export function SignaturePickerModal({ visible, onClose }: Props) {
 
           {signatures.length === 0 ? (
             <View style={styles.empty}>
-              <ThemedText type="small" color="textSecondary" style={{ textAlign: 'center' }}>
-                Bạn chưa có chữ ký nào. Hãy vẽ một chữ ký mới.
+              <ThemedText type="smallBold">Chưa có chữ ký nào.</ThemedText>
+              <ThemedText type="small" color="textSecondary" style={{ textAlign: 'center', marginTop: Spacing.one, maxWidth: 280 }}>
+                Vẽ một chữ ký và dùng lại trên mọi tài liệu. Chữ ký chỉ nằm trên thiết bị của bạn.
               </ThemedText>
             </View>
           ) : (
