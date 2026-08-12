@@ -34,11 +34,12 @@ Reuses `atomicWrite` into `Paths.document/guidance/state.json`; web variant stor
 
 ### D4 — Component contracts
 - **Badge**: pure presentational pill ("MỚI"/"BETA"/"CẬP NHẬT"), absolutely positioned by parent; rendered when `shouldShowBadge`.
-- **Tooltip**: wraps an anchor; bubble with arrow above/below, first-tap trigger, tap-anywhere (within wrapper) + ✕ + 8s auto-dismiss. Bubble positioned relative to wrapper (works inside the bottom toolbar without a portal).
+- **Tooltip**: wraps an anchor; bubble with arrow above/below, first-tap trigger, tap-anywhere (within wrapper) + ✕ + 8s auto-dismiss. Bubble positioned relative to wrapper (works inside the bottom toolbar without a portal). A **floating variant** (bubble positioned by the caller via `bubbleStyle`, no anchor/overlay) is used inside horizontal ScrollViews, which clip an anchored bubble that extends past their bounds on Android — the signature tooltip in the annotation toolbar uses it.
 - **Spotlight**: full-screen overlay; 4 dim rects carve a cutout around the measured target (window coords from `measureInWindow`); step card below (or above, when target is low on screen); always-visible "Bỏ qua", "Tiếp"/"Xong" + progress dots; tapping the cutout completes the flow (user is now using the feature); tap outside does nothing.
 - **Contextual Helper**: wraps a (possibly disabled) control; tapping it opens a "Làm gì / Vì sao chưa dùng được / Cách mở khóa" popover with optional action button (deep link). Used for undo-empty and scanned-page search.
 
-### D5 — Integration surface (v1)
+### D4a — Undo/redo live outside the horizontal ScrollView
+In the annotation toolbar's second row, the swatches scroll horizontally while undo/redo stay pinned right of the scroll viewport. This is required so the undo **Contextual Helper** popover (which opens upward) is never clipped by the ScrollView on Android — the same clipping problem that motivated the Tooltip floating variant.
 - `annotation-intro` spotlight: first time the user turns on annotating → 2 steps (toolbar, undo), targets measured from the rendered toolbar.
 - `signature-create`: badge on the signature tool; first tap shows tooltip "Vẽ một lần, dùng mãi mãi."
 - `undo-empty`: contextual helper on the disabled undo button.
@@ -46,7 +47,7 @@ Reuses `atomicWrite` into `Paths.document/guidance/state.json`; web variant stor
 
 ## Risks / Trade-offs
 
-- **Tooltip dismissal scope**: tap-outside only dismisses within the wrapper bounds (no portal); mitigated by ✕ + 8s auto-dismiss. A future portal (e.g. `react-native-portalize`) can widen this if needed.
+- **Tooltip dismissal scope**: tap-outside only dismisses within the wrapper bounds (no portal); mitigated by ✕ + 8s auto-dismiss. A future portal (e.g. `react-native-portalize`) can widen this if needed. ScrollView clipping on Android is avoided via the floating variant (D4) and by keeping undo/redo outside the scroll (D4a).
 - **measureInWindow timing**: toolbar must be laid out before measuring; integration guards with `onLayout` (no fixed sleeps).
 - **Disabled children inside Contextual Helper**: the wrapper Pressable intercepts taps even when the inner control is disabled; callers render the plain control when the feature is available (helper only wraps the disabled state).
 - **Counters only (no raw events)**: sufficient for completion/skip/usage KPIs; a JSONL event log is deferred.

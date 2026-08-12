@@ -22,7 +22,7 @@
 
 ## 4. Validation
 
-- [ ] 4.1 `npx tsc --noEmit` passes
-- [ ] 4.2 `npx expo lint` passes
-- [ ] 4.3 `openspec validate --all` passes (all changes incl. new one)
-- [ ] 4.4 Smoke (manual): open PDF → enable annotating → 2-step spotlight shows once → skip → never auto-re-nags; tap signature → badge + tooltip; undo disabled → helper explains; search in scanned doc → 0-result helper
+- [x] 4.1 `npx tsc --noEmit` passes
+- [x] 4.2 `npx expo lint` passes
+- [x] 4.3 `openspec validate --all` passes (all changes incl. new one)
+- [ ] 4.4 Smoke (manual, pending final device build): open PDF → enable annotating → 2-step spotlight shows once → skip → never auto-re-nags; tap signature → badge + tooltip; undo disabled → helper explains; search in scanned doc → 0-result helper
