@@ -1,0 +1,15 @@
+diff --git a/node_modules/whatwg-url-minimum/package.json b/node_modules/whatwg-url-minimum/package.json
+--- a/node_modules/whatwg-url-minimum/package.json
++++ b/node_modules/whatwg-url-minimum/package.json
+@@ -16,9 +16,8 @@
+   "exports": {
+     ".": {
+       "types": "./dist/whatwg-url-minimum.d.ts",
+-      "import": "./dist/whatwg-url-minimum.mjs",
+-      "require": "./dist/whatwg-url-minimum.js",
+-      "source": "./src/index.ts"
++      "import": "./dist/whatwg-url-minimum.js",
++      "require": "./dist/whatwg-url-minimum.js"
+     },
+     "./package.json": "./package.json"
+   },
