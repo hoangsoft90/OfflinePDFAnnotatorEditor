@@ -17,6 +17,8 @@ import { ThumbnailsSheet } from '@/components/pdf/ThumbnailsSheet';
 import { searchDocument } from '@/engine/search';
 import type { PdfEngine, SearchHit } from '@/engine/types';
 import { readPdfBytes } from '@/files/read-pdf';
+import { useShallow } from 'zustand/react/shallow';
+
 import { useMetadataStore } from '@/store/use-metadata-store';
 import { usePalette } from '@/store/use-theme-store';
 import { Radius, Spacing } from '@/constants/theme';
@@ -383,8 +385,10 @@ export function ViewerScreen() {
 
   const currentPageId = pageIds[pageIndex];
   const pageHeightPts = pageSizes[pageIndex]?.heightPts ?? 842;
-  const pageAnnotations = useAnnotationStore((s) =>
-    docId ? Object.values(s.byDoc[docId] ?? {}).filter((a) => a.pageId === currentPageId) : []
+  const pageAnnotations = useAnnotationStore(
+    useShallow((s) =>
+      docId ? Object.values(s.byDoc[docId] ?? {}).filter((a) => a.pageId === currentPageId) : []
+    )
   );
   const projectReady = useProjectStore((s) => s.projects[docId ?? ''] !== undefined);
 

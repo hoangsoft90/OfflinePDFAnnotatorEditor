@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { runOnJS, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
+import { useShallow } from 'zustand/react/shallow';
 
 import { AnnotationOverlay } from '@/components/pdf/AnnotationOverlay';
 import { AddAnnotationCommand, DeleteAnnotationCommand, MoveAnnotationCommand } from '@/commands/annotation-commands';
@@ -57,7 +58,9 @@ export function AnnotationCanvas({
   const setPendingText = useToolStore((s) => s.setPendingText);
   const selectedSig = useSignatureStore((s) => s.selectedForPlacement);
   const selectSig = useSignatureStore((s) => s.selectForPlacement);
-  const annotations = useAnnotationStore((s) => Object.values(s.byDoc[docId] ?? {}).filter((a) => a.pageId === pageId));
+  const annotations = useAnnotationStore(
+    useShallow((s) => Object.values(s.byDoc[docId] ?? {}).filter((a) => a.pageId === pageId))
+  );
   const execute = useCommandStack((s) => s.execute);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [draft, setDraft] = useState<Annotation | null>(null);
