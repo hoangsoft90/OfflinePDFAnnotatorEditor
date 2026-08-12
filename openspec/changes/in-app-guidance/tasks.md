@@ -25,4 +25,11 @@
 - [x] 4.1 `npx tsc --noEmit` passes
 - [x] 4.2 `npx expo lint` passes
 - [x] 4.3 `openspec validate --all` passes (all changes incl. new one)
-- [ ] 4.4 Smoke (manual, pending final device build): open PDF → enable annotating → 2-step spotlight shows once → skip → never auto-re-nags; tap signature → badge + tooltip; undo disabled → helper explains; search in scanned doc → 0-result helper
+- [~] 4.4 Smoke (manual, on-device — in progress):
+  - [x] App installs and launches on a real Android device (release APK from GH Actions)
+  - [x] Organizer home renders (recents list visible)
+  - [x] Opening a PDF into the viewer exposed a **pre-existing crash** unrelated to guidance: `Maximum update depth exceeded` from an unstable zustand v5 selector in `ViewerScreen`/`AnnotationCanvas` (`Object.values(...).filter(...)` returned a new array each render → infinite re-render loop). Fixed with `useShallow` (committed, rebuild in flight).
+  - [ ] Open PDF → enable annotating → 2-step spotlight shows once → skip → never auto-re-nags
+  - [ ] Tap signature → badge + tooltip
+  - [ ] Undo disabled → helper explains
+  - [ ] Search in scanned doc → 0-result helper

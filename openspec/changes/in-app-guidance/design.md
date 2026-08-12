@@ -51,3 +51,7 @@ In the annotation toolbar's second row, the swatches scroll horizontally while u
 - **measureInWindow timing**: toolbar must be laid out before measuring; integration guards with `onLayout` (no fixed sleeps).
 - **Disabled children inside Contextual Helper**: the wrapper Pressable intercepts taps even when the inner control is disabled; callers render the plain control when the feature is available (helper only wraps the disabled state).
 - **Counters only (no raw events)**: sufficient for completion/skip/usage KPIs; a JSONL event log is deferred.
+
+## Implementation notes (from on-device smoke test)
+
+- The first smoke test on a real device surfaced a **pre-existing viewer crash** unrelated to this change: with zustand v5, store selectors returning a fresh array/object each call (`useAnnotationStore((s) => Object.values(...).filter(...))`) make the component re-render forever (`Maximum update depth exceeded`) once any other render happens. Fixed by wrapping those selectors in `useShallow`. **Rule for this module**: every `useGuidance`-related selector and every store selector used alongside guidance must return stable references (primitives, memoized values, or `useShallow`); the guidance singleton itself only ever hands out stable objects/flags computed during render.
