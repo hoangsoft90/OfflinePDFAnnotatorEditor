@@ -11,10 +11,10 @@ The organizer MUST display all pages of the document as a thumbnail grid with pa
 - **WHEN** the user opens the page organizer for a 10-page document
 - **THEN** a grid of 10 thumbnails with page labels is shown
 
-### Requirement: Reorder pages
-The user MUST be able to reorder pages via drag-and-drop (long-press to lift, drag to target slot). Reordering MUST update `pageOrder` (list of pageIds) so annotations remain attached to the correct page (ADR-007).
+### Requirement: Reorder pages (not yet implemented)
+The `ReorderPagesCommand` and the `pageOrder` mutation helpers exist, but the organizer currently exposes NO drag-and-drop reorder UI. When reorder is added it MUST update `pageOrder` (list of pageIds) so annotations remain attached to the correct page (ADR-007).
 
-#### Scenario: Drag page 2 to position 1
+#### Scenario: Drag page 2 to position 1 (future)
 - **WHEN** the user drags page 2 above page 1
 - **THEN** the grid shows page 2 first and the pageOrder list reflects the new order
 
@@ -40,7 +40,7 @@ The user MUST be able to extract selected pages into a new PDF document, keeping
 - **THEN** a new document containing those pages (with their annotations) is created and offered for saving
 
 ### Requirement: Organizer changes participate in undo/redo
-Page operations MUST be commands in the command stack (undoable/redoable) and MUST autosave like annotation operations.
+Rotate and delete page operations MUST be commands in the command stack (undoable/redoable) and MUST autosave like annotation operations.
 
 #### Scenario: Undo a reorder
 - **WHEN** the user reorders pages then taps undo in the organizer

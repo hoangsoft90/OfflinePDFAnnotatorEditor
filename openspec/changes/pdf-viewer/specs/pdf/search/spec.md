@@ -19,8 +19,8 @@ The viewer MUST navigate to the page of a selected search result and visually in
 - **THEN** the viewer navigates to page 7 and highlights the matched text region
 
 ### Requirement: Scanned-document behavior
-When a page has no extractable text (scanned/image-only), search MUST skip it and the results MUST make clear that no text was found, rather than crashing or showing misleading results.
+When a page has no extractable text (scanned/image-only), search MUST skip it and MUST NOT crash or show misleading results.
 
 #### Scenario: Search scanned PDF
 - **WHEN** the user searches in a scanned PDF with no text layer
-- **THEN** the app shows an empty-result state explaining no text layer exists
+- **THEN** the search returns no hits and the results list stays empty (no misleading entries)

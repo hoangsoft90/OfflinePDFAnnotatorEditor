@@ -5,11 +5,11 @@ Defines end-to-end signature management: capturing a signature, storing it as a 
 ## ADDED Requirements
 
 ### Requirement: Capture a signature
-The app MUST provide a signature capture screen where the user draws with finger or stylus, sees the stroke live, and can clear/redo the stroke before saving. The saved signature MUST be a transparent-background PNG stored in the app-private `signatures/` directory.
+The app MUST provide a signature capture screen where the user draws with finger or stylus, sees the stroke live, and can clear the stroke before saving. The saved signature MUST be a PNG stored in the app-private `signatures/` directory (currently ink on a white background; transparent background is not yet implemented).
 
 #### Scenario: Draw and save signature
 - **WHEN** the user draws a signature and taps Save
-- **THEN** a transparent PNG is written to the signatures directory and appears in the saved-signatures list
+- **THEN** a PNG of the drawn ink is written to the signatures directory and appears in the saved-signatures list
 
 ### Requirement: Signature asset privacy
 Signature PNGs MUST be stored in app-private internal storage, never in shared media directories, and MUST NOT be transmitted anywhere. They MUST be protected by the same privacy contract as the rest of the app (ADR-006), with encryption of the signatures directory identified as a P1 hardening item.

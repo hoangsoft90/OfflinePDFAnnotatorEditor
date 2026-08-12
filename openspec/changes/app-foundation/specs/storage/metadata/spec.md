@@ -5,7 +5,7 @@ Provides the local SQLite-backed metadata store that tracks documents, recent-op
 ## ADDED Requirements
 
 ### Requirement: Document metadata persistence
-The metadata store MUST persist one row per known document with: stable id, content URI, display name, size, page count, last-opened timestamp, modified timestamp, and favorite flag.
+The metadata store MUST persist one row per known document with: stable id, content URI, display name, size, page count, last-opened timestamp, modified timestamp, favorite flag, and an imported-copy flag marking documents that only exist as app-private copies of externally-opened PDFs (ADR-008).
 
 #### Scenario: Document row upsert on open
 - **WHEN** a document is opened successfully

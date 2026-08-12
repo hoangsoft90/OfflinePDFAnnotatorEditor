@@ -32,7 +32,7 @@ Chosen over `react-native-pdf` (native) and `@thatkid02/react-native-pdf-viewer`
 
 The alignment requirement is decisive: we render each page to a bitmap and control zoom/pan ourselves with gesture-handler + reanimated, so the SVG annotation overlay shares the exact same transform — no drift, satisfying the golden acceptance criteria. pdf.js is Apache-2.0 (passes ADR-001 license gate).
 
-Architecture: one hidden `react-native-webview` hosts an HTML shell with the bundled `pdf.js` (legacy build, copied as an asset). RN sends commands via `postMessage` (`open(bytes)`, `renderPage(page, scale)`, `extractText(page)`); WebView returns `Uint8Array`-free results: PNG data URLs for pages, JSON text items for extraction. Page bitmaps are cached to `cache/thumbnails`/`cache/pages` via expo-file-system to avoid re-render.
+Architecture: one hidden `react-native-webview` (1×1, transparent — `PdfEngineHost.tsx`) hosts an HTML shell with the bundled pdf.js ESM build (`assets/pdfjs/pdf.min.mjs` + `pdf.worker.min.mjs`), embedded as base64 blobs and loaded fully offline via `pdfjs-sources.ts` + `pdfjs-html.ts` (no fetch). RN sends commands via `postMessage` (`open(bytes)`, `renderPage(page, scale)`, `extractText(page)`); the engine (`WebViewPdfEngine` in `pdfjs-engine.ts`) correlates responses by request id. WebView returns `Uint8Array`-free results: JPEG/PNG data URLs for pages, JSON text items for extraction. Page bitmaps are cached to `cache/pages/<docId>` via expo-file-system (`bitmap-cache.ts`) to avoid re-render.
 
 **Swap path:** `PdfEngine` interface isolates all feature code; a native renderer (react-native-pdf) can replace the WebView implementation without touching viewer/annotation code.
 
@@ -51,9 +51,11 @@ pdf-lib (MIT) performs page ops (rotate/delete/reorder/extract) and writes annot
 - Canonical storage space: **PDF points, bottom-left origin** (ISO 32000) — annotations are stored this way and exported unchanged.
 - View/render space: **pixels, top-left origin** (RN screen + pdf.js viewport).
 - `src/engine/coordinates.ts` provides the bijective transforms:
-  - `pdfToScreen(rect, pageSizePts, scale)` → `{x, y, w, h}` (y flipped: `screenY = (pageH - pdfY - h) * scale`)
-  - `screenToPdf(point, pageSizePts, scale)` → PDF points
-  - `pdfRectToQuadPoints(rect, pageSizePts)` → PDF QuadPoints array for export
+  - `pdfRectToScreen(rect, pageHeightPts, scale)` → `{x, y, w, h}` screen px (y flipped: `screenY = (pageHeightPts - pdfY - h) * scale`)
+  - `screenToPdfPoint(point, pageHeightPts, scale)` → PDF points
+  - `screenRectToPdfRect(screen, pageHeightPts, scale)` → PDF-point rect
+  - `pdfRectToQuadPoints(rect, pageHeightPts)` → PDF QuadPoints array for export
+  - `rotatePdfRect(rect, pageW, pageH, rotation)` → rect after 90/180/270 CW rotation
 - pdf.js viewport: use `viewport = page.getViewport({ scale })` whose coordinate space is already top-left pixels with the PDF points scaled — so `pdfToScreen` is mostly a y-flip from PDF points.
 
 ### D6 — Search
@@ -72,5 +74,5 @@ WebView renders small scales (e.g. width 160px) async, cached in `cache/thumbnai
 - **WebView pdf.js perf on 50MB+ scan PDFs:** mitigated by LRU cache, pre-render, capped zoom scale; native renderer swap path exists if insufficient (D1).
 - **WebView memory on huge files:** bytes held in JS bridge; acceptable for MVP budget (test `large.pdf` in golden suite later).
 - **pdf-lib rendering fidelity:** pdf-lib is for modification; all *display* is pdf.js. pdf-lib never re-renders.
-- **New Architecture:** gesture-handler v2/v3 + reanimated 4 are New-Arch ready (RN 0.85).
+- **New Architecture:** gesture-handler v2 + reanimated 4 are New-Arch ready (RN 0.86).
 - **Expo Go preview:** WebView, gesture-handler, reanimated, svg all run in Expo Go — no dev build required for the viewer change.

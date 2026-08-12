@@ -16,14 +16,14 @@ Every annotation MUST reference a stable page identifier (`pageId`) that is inde
 - **THEN** the highlight remains on page 5's content and does not shift to another page
 
 ### Requirement: Annotation types and geometry
-The model MUST support at least: highlight, underline, strikeout, freehand pen, eraser-stroke, text box (add-only), rectangle, ellipse, line, and arrow annotations. Each annotation MUST store: type, pageId, geometry (bounding box in PDF points and/or path points), color, opacity, stroke width, optional text content, and creation/modification timestamps.
+The model MUST support at least: highlight, underline, strikeout, freehand pen, text box (add-only), rectangle, ellipse, line, arrow, and signature annotations. The eraser is a tool, not a stored annotation type — erasing deletes whole annotations it intersects. Each annotation MUST store: type, pageId, geometry (bounding box in PDF points and/or path points), color, opacity, stroke width, optional text content, optional image asset path (signature), and creation/modification timestamps.
 
 #### Scenario: Geometry in PDF points
 - **WHEN** an annotation is created on a page
 - **THEN** its geometry is stored in PDF native coordinates (points, bottom-left origin) and never in screen pixels
 
 ### Requirement: Project workspace
-Each document MUST have a Project object containing: id, documentId, revision, dirty flag, source fingerprint (lastModified + size of the original), pageOrder (list of pageIds), and references to annotation store and signature assets. The Project MUST persist as JSON in the document's workspace directory.
+Each document MUST have a Project object containing: id, documentId, revision, dirty flag, source fingerprint (lastModified + size of the original), pageOrder (list of pageIds), a per-page rotation map (`pageRotations`), `sessionId` (journal scoping), `schemaVersion`, and `projectPath`. The Project MUST persist as JSON in the document's workspace directory (`project.json`).
 
 #### Scenario: Project created on first annotate
 - **WHEN** the user creates the first annotation on a document

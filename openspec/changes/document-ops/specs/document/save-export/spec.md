@@ -12,7 +12,7 @@ The app MUST offer "Save a copy…" as the default save action, writing a new PD
 - **THEN** a new PDF is written there containing the page order, rotations, and annotations, and the original is unchanged
 
 ### Requirement: Annotation layer options
-Export MUST support both (a) flattened output where annotations are drawn into the page content, and (b) non-flattened output where annotations are written as standard PDF annotation objects (highlight with QuadPoints, ink, text, images) preserved across viewers. Existing annotations from other tools MUST be preserved unless the user explicitly chooses flatten.
+Export MUST support both (a) flattened output where annotations are drawn into the page content, and (b) non-flattened output where markup annotations (highlight/underline/strikeout) are written as standard PDF annotation objects with QuadPoints preserved across viewers; pen/text/shapes/signature are drawn into the page content in both modes. Existing annotations from other tools MUST be preserved unless the user explicitly chooses flatten.
 
 #### Scenario: Reopen in Adobe Reader
 - **WHEN** a highlight is exported non-flattened and reopened in Adobe Reader
@@ -30,7 +30,7 @@ Overwriting the original MUST require explicit confirmation and MUST be atomic: 
 - **THEN** the original file remains intact and the user sees an error
 
 ### Requirement: Rename and duplicate
-The user MUST be able to rename a document (metadata + exported copy name) and duplicate it (export a copy under a new name). Duplicating MUST produce an independent file.
+The user MUST be able to duplicate a document (export a copy under a new name) as an independent file. Rename is available in the data layer (`MetadataRepo.rename` + `useMetadataStore.rename`) but is not exposed in the UI yet.
 
 #### Scenario: Duplicate document
 - **WHEN** the user duplicates a document

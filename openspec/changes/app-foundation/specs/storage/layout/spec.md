@@ -1,11 +1,11 @@
 ## Purpose
 
-Defines where application data lives on device: per-document project workspaces (JSON + annotation assets), thumbnail cache, and signature assets — all inside app-private storage, never in shared media directories, and never with the PDF stored as a BLOB.
+Defines where application data lives on device: per-document project workspaces (JSON + annotation assets), thumbnail cache, rendered page-bitmap cache, external-intent import copies, temporary share/duplicate export copies, and signature assets — all inside app-private storage, never in shared media directories, and never with the PDF stored as a BLOB.
 
 ## ADDED Requirements
 
 ### Requirement: App-private storage layout
-The app MUST organize storage under app-private directories as follows: one project workspace directory per `docId` (containing the Project JSON and annotation assets), a thumbnail cache directory, and a signature assets directory. The original PDF file is never copied into these directories unless explicitly imported by the user.
+The app MUST organize storage under app-private directories as follows: one project workspace directory per `docId` (containing the Project JSON and annotation assets), a thumbnail cache directory, a rendered page-bitmap cache directory, an imports directory for copies of externally-opened PDFs, temporary share/duplicate export directories, and a signature assets directory. The original PDF file is never copied into these directories unless explicitly imported by the user.
 
 #### Scenario: Project workspace created per document
 - **WHEN** a document is opened for the first time

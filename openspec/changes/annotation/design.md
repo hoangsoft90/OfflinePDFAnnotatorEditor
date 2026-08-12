@@ -22,26 +22,26 @@
 - Persistence via `ProjectManager` service (`src/project/`) — save/load/autosave; journal via `src/journal/`.
 
 ### D2 — Command pattern (ADR-005)
-`src/commands/` — base `Command { id, label, execute(), undo() }`; concrete commands: `AddAnnotationCommand`, `DeleteAnnotationCommand`, `MoveAnnotationCommand`, `ResizeAnnotationCommand`, `RestyleCommand`, `ClearPageCommand`. `CommandStack` (undoStack/redoStack, cap 100) with `canUndo/canRedo`. Every `execute()` appends a journal entry (D4). Undo/redo buttons bound to stack state via a zustand slice.
+`src/commands/` — `Command` interface + serializable `CommandPayload` (`types.ts`); concrete commands in `annotation-commands.ts`: `AddAnnotationCommand`, `DeleteAnnotationCommand`, `MoveAnnotationCommand`, `ClearPageCommand` (`ResizeAnnotationCommand` and `RestyleCommand` are implemented as aliases of `MoveAnnotationCommand`, since resize/restyle are store-level updates). `CommandStack` (`stack.ts`, zustand slice, undoStack/redoStack, cap 100) with `canUndo/canRedo`. Every `execute()`/`undo()`/`redo()` appends its effect to the journal (D4). Undo/redo buttons bound to stack state via the zustand slice.
 
 ### D3 — Tool engine: gesture → geometry
 Tools implemented as a strategy on `PdfCanvas` (selected via toolbar): each tool defines gesture lifecycle (begin/move/end) mapping canvas (already-transformed) coordinates through `screenToPdf` into PDF points.
-- Text-marking tools: on drag, query the engine's extracted text items for the page, find lines intersecting the drag rect, snap geometry to line bounds (falls back to freehand rect on no-text pages).
+- Text-marking tools: on drag, use the engine's already-extracted text items for the page, find a line intersecting the drag rect, snap geometry to its bounds (falls back to freehand rect on no-text pages).
 - Pen: accumulate path points → polyline.
 - Shapes: drag start/end → rect/ellipse/line/arrow (arrowhead computed).
-- Text box: tap → inline editor overlay → commit `content`.
-- Select mode: hit-test topmost annotation, handles for resize, move updates geometry.
-- Eraser: hit-test against stroke distance / bbox intersection, delete matched annotations (one command per erase action).
+- Text box: type the content in the toolbar input, then tap the page → commit `content`.
+- Select mode: hit-test topmost annotation, drag to move (accumulated locally, committed as ONE command per drag); resize handles are not implemented.
+- Eraser: hit-test against bounding-box intersection, delete matched annotations (one command per erase action).
 
 ### D4 — Journal + recovery
 `src/journal/journal.ts`:
-- Append-only `journal.jsonl` per document session: `{ seq, sessionId, commandType, payload, ts }`.
+- Append-only `journal.jsonl` per document session: one JSON line per command — `{ sessionId, seq, payload }`, where `payload` is the serializable `CommandPayload` (type, docId, annotation snapshots, pageOrder before/after, ts).
 - On open with dirty flag: read journal, offer recovery dialog; on accept replay commands through the stack; on decline truncate journal after backing up to `journal.bak.jsonl` (kept until next successful save).
 - New session id on each viewer entry (spec: no cross-session replay).
 - Autosave: debounced (300ms) full Project JSON write + immediate journal append per command; `AppState` background listener flushes.
 
-### D5 — Existing annotations display (ADR-004 read path)
-`PdfEngine` gains `extractAnnotations(pageId)` (optional capability): pdf.js annotation layer returns existing annotation rects/types; the canvas renders them as read-only overlay items (editable later). Preservation at export is handled in `document-ops` (pdf-lib keeps them unless flatten). This change only guarantees they are displayed.
+### D5 — Existing annotations preservation (ADR-004 read path)
+In-viewer display of annotations already present in the source PDF is NOT implemented: the engine does not expose an `extractAnnotations` capability and the overlay only renders app-created annotations. Preservation at export is guaranteed structurally instead — `document-ops` builds the output by copying the original pages with pdf-lib (`copyPages`), so pre-existing annotations stay in the exported file unless the user explicitly chooses flatten.
 
 ### D6 — Toolbar UX
 Bottom toolbar with tool selector (icons + active state), color swatches, opacity slider, stroke width stepper, undo/redo, and select tool. Collapses when keyboard open (text box). Non-modal; canvas gestures stay live.

@@ -18,12 +18,12 @@ If the app process is killed while a project is dirty, reopening the app MUST de
 - **WHEN** the app is killed mid-edit and reopened
 - **THEN** the user is offered recovery and, on accept, the annotations are restored from the journal
 
-### Requirement: Dirty-state leave prompt
-When the user leaves the viewer with unsaved changes, the app MUST prompt with explicit choices: Continue editing / Save / Discard. Saving writes the project (and flattens to an export only when the user chooses Save in the export flow).
+### Requirement: Autosave keeps work safe on leave
+When the user leaves the viewer with unsaved changes, the app MUST NOT lose them: every command is journaled immediately and the Project JSON is autosaved (debounced) with an AppState background flush. A "Continue editing / Save / Discard" leave prompt is NOT implemented — leaving keeps the dirty project recoverable via the journal on next open.
 
 #### Scenario: Leave viewer with changes
-- **WHEN** the user has unsaved annotation changes and attempts to leave the viewer
-- **THEN** the app shows Continue editing / Save / Discard and only discards after confirmation
+- **WHEN** the user has unsaved annotation changes and leaves the viewer
+- **THEN** the changes are already journaled and autosaved, and reopening offers recovery from the journal
 
 ### Requirement: Non-destructive journal
 The journal MUST be append-only and never rewrite or erase prior entries during a session; recovery replays entries in order. A session boundary (new session marker) MUST be recorded so a fresh session does not replay old ones.

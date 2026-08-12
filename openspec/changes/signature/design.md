@@ -18,7 +18,7 @@
 ## Decisions
 
 ### D1 — Capture surface: react-native-svg-based signature pad
-A `SignaturePad` component (full-width drawing area) records pointer path via gesture-handler, renders live stroke with react-native-svg polyline, and exports to PNG using `react-native-view-shot` (captures the SVG layer to a transparent-background PNG file). Alternative considered: canvas libs (`react-native-canvas` via skia) — heavier, not Expo Go friendly; svg+view-shot is Expo-Go compatible.
+A `SignaturePad` component (full-width drawing area, `src/signatures/signature-pad.tsx`) records pointer path via gesture-handler, renders the live stroke with react-native-svg polyline, and exports to PNG using `react-native-view-shot` (`captureRef` → `result: 'tmpfile'`). The pad container has a white background, so the captured PNG is the ink on white — transparent-background capture is not implemented. Alternative considered: canvas libs (`react-native-canvas` via skia) — heavier, not Expo Go friendly; svg+view-shot is Expo-Go compatible.
 
 ### D2 — Storage: `src/signatures/signature-repo.ts`
 - Dir: `Paths.document/signatures/<signatureId>.png` (from foundation `storage-paths`).
@@ -32,11 +32,11 @@ A `SignaturePad` component (full-width drawing area) records pointer path via ge
 Signature placement is a tool in the annotation toolbar: tap tool → picker modal (saved signatures grid + "Draw new") → on pick, back to canvas where next tap places the signature centered at the tap point, then Select mode auto-activates for move/resize. Resize uses the same handle system as other annotations (uniform scale for images).
 
 ### D5 — UX flow
-`SignaturePadScreen` (modal): canvas + Clear/Redo/Save. Save validates non-empty stroke, exports PNG, upserts index, returns to picker with new entry selected.
+`SignaturePadScreen` (`src/app/signature-pad.tsx`, modal): canvas + Clear + Save. Save captures the PNG, upserts the index, and returns to the picker with the new entry selected.
 
 ## Risks / Trade-offs
 
 - **view-shot capture of SVG**: requires the SVG layer to be laid out and captured without clipping; handled by capturing the pad container (fixed aspect) rather than the whole screen. Fallback: capture via `react-native-view-shot` `result: 'tmpfile'` then copy to signatures dir.
-- **Transparency**: PNG from svg background must be transparent (no fill on capture container).
+- **Transparency (not implemented)**: the captured PNG currently has a white background (pad container is white); transparent-background capture is a future improvement.
 - **Large signatures**: PNG sizes are small (vector-ish strokes), acceptable.
 - **Security hardening (P1)**: encrypting `signatures/` with Android Keystore is explicitly deferred; documented in README privacy notes.

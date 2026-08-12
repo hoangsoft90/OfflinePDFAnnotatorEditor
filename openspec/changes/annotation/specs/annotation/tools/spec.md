@@ -40,7 +40,7 @@ Rectangle, ellipse, line, and arrow tools MUST draw the corresponding vector sha
 - **THEN** an arrow annotation from start to end point is created with an arrowhead at the end
 
 ### Requirement: Move, resize, and delete selections
-With the select tool, the user MUST be able to tap an annotation to select it, drag to move it, use handles to resize it (where applicable), and delete it. Selection MUST highlight the annotation's bounds.
+With the select tool, the user MUST be able to tap an annotation to select it, drag to move it, and delete it (via the eraser). Selection MUST highlight the annotation's bounds. Resize handles are not implemented.
 
 #### Scenario: Move a highlight
 - **WHEN** the user selects a highlight and drags it

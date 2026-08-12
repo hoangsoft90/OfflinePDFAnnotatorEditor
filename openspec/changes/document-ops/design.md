@@ -22,7 +22,7 @@ All page operations mutate `Project.pageOrder` + per-page rotation map (`pageRot
 ### D2 — Modifier: pdf-lib (from pdf-viewer change)
 pdf-lib (pure JS, MIT) is the write-path engine:
 - **Page ops for export**: `pdfDoc.getPages()`, reorder via `pdfDoc.removePage()`/`copyPages`, `page.setRotation({angle})`, delete via removePage, extract via copyPages into a new PDFDocument.
-- **Annotations**: pdf-lib can add highlight/underline/strikeout with QuadPoints, ink (via drawSVGPath on a hidden layer or annotation dict), text (`page.drawText`), images (`page.drawImage`). Where pdf-lib lacks a native annotation API (e.g. QuadPoints), we append standard annotation dictionaries to `/Annots` via low-level `pdfDoc.context` — implemented in `src/export/annotation-writer.ts`.
+- **Annotations**: pdf-lib can add highlight/underline/strikeout with QuadPoints, ink (via drawSVGPath on a hidden layer or annotation dict), text (`page.drawText`), images (`page.drawImage`). Where pdf-lib lacks a native annotation API (e.g. QuadPoints), we append standard annotation dictionaries to `/Annots` via low-level `pdfDoc.context` — implemented in `src/export/export-utils.ts` (`writeAnnotations` / `appendMarkupAnnotation`).
 - **Flatten**: draw annotations directly into content streams (opaque) → result renders identically everywhere.
 
 ### D3 — Atomic overwrite (ADR-004)
@@ -41,7 +41,7 @@ For SAF `content://` targets (original in user storage), writing "over" requires
 Share: export to temp copy in `cache/share/`, invoke `expo-sharing.shareAsync` (Android SAF share sheet); cleanup temp after. Duplicate: export a copy to `cache/duplicates/` then insert into metadata store as a new recent document (independent file).
 
 ### D6 — Organizer UI
-`app/organizer/[docId].tsx`: thumbnail grid (FlatList numColumns responsive), long-press drag reorder via gesture-handler (`react-native-draggable-flatlist` evaluated — else custom reorder), multi-select mode (checkbox layer) for rotate/delete/extract, top bar with selection actions + Done. Undo/redo buttons.
+`src/app/organizer/[docId].tsx` + `src/screens/organizer/OrganizerScreen.tsx`: thumbnail grid (FlatList, 2 columns), multi-select mode (tap-to-select layer) for rotate (cw/ccw), delete (with confirmation) and extract; top bar with selection actions + undo/redo buttons. Drag-to-reorder is NOT implemented — the `ReorderPagesCommand` and `pageOrder` mutation helpers exist, but the organizer exposes no drag UI yet.
 
 ## Risks / Trade-offs
 
