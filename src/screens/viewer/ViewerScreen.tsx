@@ -156,8 +156,10 @@ export function ViewerScreen() {
         const rendered = await engine.renderPage(index, renderScale);
         setCurrentBitmap(rendered.uri);
         await cache.put(index, renderScale, rendered);
-      } catch {
-        // keep previous bitmap
+      } catch (e) {
+        // Keep the previous bitmap, but surface the failure — a silent black
+        // page is worse than a logged error.
+        console.warn('renderPage failed', index, renderScale, e instanceof Error ? e.message : e);
       }
     },
     [cache, engine, renderScale]

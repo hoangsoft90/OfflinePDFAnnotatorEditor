@@ -89,6 +89,24 @@ export class WebViewPdfEngine implements PdfEngine {
       const message = JSON.stringify({ id, type, args });
       // Double-encode so the message is passed as a string literal.
       this.webView.injectJavaScript(`window.__dispatch(${JSON.stringify(message)});true;`);
+      // Requests must not hang forever — if the hidden WebView's canvas render
+      // is suspended (e.g. compositor paused), surface a clear error instead of
+      // leaving the viewer black indefinitely.
+      const original = this.pending.get(id)!;
+      const timeout = setTimeout(() => {
+        this.pending.delete(id);
+        reject(new Error(`PDF engine request timed out: ${type}`));
+      }, 30000);
+      this.pending.set(id, {
+        resolve: (v: unknown) => {
+          clearTimeout(timeout);
+          original.resolve(v);
+        },
+        reject: (e: Error) => {
+          clearTimeout(timeout);
+          original.reject(e);
+        },
+      });
     });
   }
 

@@ -56,12 +56,24 @@ function WebViewHost({ engine }: { engine: WebViewPdfEngine }) {
         javaScriptEnabled
         domStorageEnabled
         allowFileAccess
+        // Android skips compositing fully-invisible (opacity 0 / 1x1) WebViews,
+        // which suspends canvas rendering — pdf.js `render().promise` then never
+        // resolves and `toDataURL` returns black. Keep a real size + near-zero
+        // opacity so the compositor still draws, and use a software layer so
+        // canvas readback is reliable off-screen.
+        androidLayerType="software"
         onMessage={(e: WebViewMessageEvent) => engine.handleMessage(e)}
         onError={(e) => {
           console.warn('PDF engine WebView error', e.nativeEvent.description);
         }}
         onRenderProcessGone={() => {
           console.warn('PDF engine WebView process gone');
+        }}
+        onConsoleMessage={(e: { type?: string; message?: string }) => {
+          // Forward WebView console (incl. pdf.js errors) to logcat for debugging.
+          if (e?.type === 'error' || /error|fail|throw|undefined/i.test(e?.message ?? '')) {
+            console.warn('[pdfjs-webview]', e?.message);
+          }
         }}
       />
     </View>
@@ -71,11 +83,12 @@ function WebViewHost({ engine }: { engine: WebViewPdfEngine }) {
 const styles = StyleSheet.create({
   hidden: {
     position: 'absolute',
-    width: 1,
-    height: 1,
-    opacity: 0,
-    left: -100,
-    top: -100,
+    // Real, non-zero size — a 1x1 WebView can be treated as not laid out.
+    width: 320,
+    height: 480,
+    opacity: 0.01,
+    left: -2000,
+    top: -2000,
   },
   error: {
     position: 'absolute',
