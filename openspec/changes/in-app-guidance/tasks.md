@@ -33,3 +33,8 @@
   - [ ] Tap signature → badge + tooltip
   - [ ] Undo disabled → helper explains
   - [ ] Search in scanned doc → 0-result helper
+
+## 5. Code review findings (2026-08-13)
+
+- [ ] **Known cosmetic bug — arrow for `placement="bottom"`** (`GuidanceTooltip` + `ContextualHelper`): `arrow` style always sets `borderTopWidth: 6` but only sets `borderBottomColor` (never `borderBottomWidth`) for bottom placement, and `borderTopColor` defaults to black → black, wrong-direction triangle (or invisible) instead of the bubble-colored up arrow. Fix: set `borderBottomWidth: 6` + `borderTopColor: 'transparent'` when placement is bottom. Not visible today — all call sites use `placement="top"`.
+- [x] Verified: `useGuidance` memoizes callbacks (`useCallback [featureId]`) → the tooltip 8s auto-dismiss timer is not reset by parent re-renders (`GuidanceTooltip` deps `[visible, onDismiss]` stay stable). No portal needed for current placements.

@@ -52,6 +52,11 @@ In the annotation toolbar's second row, the swatches scroll horizontally while u
 - **Disabled children inside Contextual Helper**: the wrapper Pressable intercepts taps even when the inner control is disabled; callers render the plain control when the feature is available (helper only wraps the disabled state).
 - **Counters only (no raw events)**: sufficient for completion/skip/usage KPIs; a JSONL event log is deferred.
 
+## Implementation notes (from code review, 2026-08-13)
+
+- Verified: `useGuidance` memoizes all callbacks (`useCallback` over `[featureId]`), so the Tooltip 8s auto-dismiss effect (deps `[visible, onDismiss]`) is never reset by parent re-renders — the signature tooltip in the toolbar is safe even though the toolbar re-renders on every tool/style change.
+- **Known cosmetic bug**: `GuidanceTooltip` and `ContextualHelper` arrows render incorrectly for `placement="bottom"`. The `arrow` style sets `borderTopWidth: 6` unconditionally; the bottom-placement branch sets only `borderBottomColor` (width stays 0 → triangle invisible) while `borderTopColor` stays at its RN default (black) → a black triangle pointing the wrong way. Fix when bottom placement is needed: `borderBottomWidth: 6` + `borderTopColor: 'transparent'`. All current call sites use `placement="top"`, so this is latent, not visible.
+
 ## Implementation notes (from on-device smoke test)
 
 - The first smoke test on a real device surfaced a **pre-existing viewer crash** unrelated to this change: with zustand v5, store selectors returning a fresh array/object each call (`useAnnotationStore((s) => Object.values(...).filter(...))`) make the component re-render forever (`Maximum update depth exceeded`) once any other render happens. Fixed by wrapping those selectors in `useShallow`. **Rule for this module**: every `useGuidance`-related selector and every store selector used alongside guidance must return stable references (primitives, memoized values, or `useShallow`); the guidance singleton itself only ever hands out stable objects/flags computed during render.
