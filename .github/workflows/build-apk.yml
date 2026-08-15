@@ -1,4 +1,4 @@
-name: Build Android APK
+name: Build Android APK (debug)
 
 on:
   workflow_dispatch:            # manual "Run workflow" button in the Actions tab
@@ -38,13 +38,13 @@ jobs:
         env:
           CI: '1'
 
-      - name: Build release APK
+      - name: Build debug APK (unsigned — no keystore needed)
         working-directory: android
-        run: ./gradlew assembleRelease
+        run: ./gradlew assembleDebug
 
-      - name: Upload APK
+      - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: app-release-apk
-          path: android/app/build/outputs/apk/release/*.apk
+          name: app-debug-apk
+          path: android/app/build/outputs/apk/debug/*.apk
           if-no-files-found: error

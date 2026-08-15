@@ -86,7 +86,8 @@
           "iosAppId": "ca-app-pub-6917313063209470~1623325977"
         }
       ],
-      "./plugins/with-ads-kotlin-fix"
+      "./plugins/with-ads-kotlin-fix",
+      "./plugins/with-release-signing"
     ],
     "experiments": {
       "typedRoutes": true,

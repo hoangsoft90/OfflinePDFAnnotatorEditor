@@ -60,3 +60,4 @@ expo-env.d.ts
 
 # CI artifacts (GitHub Actions APK builds)
 /apk
+/keystore/
