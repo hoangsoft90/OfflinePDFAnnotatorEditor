@@ -1,4 +1,4 @@
-name: Build Android APK (test, debug-signed)
+name: Build Android APK (debug, standalone)
 
 on:
   workflow_dispatch:            # manual "Run workflow" button in the Actions tab
@@ -38,20 +38,27 @@ jobs:
         env:
           CI: '1'
 
-      # NOTE: we build assembleRelease, NOT assembleDebug.
-      # A gradle debug variant does not embed the JS bundle and always tries
-      # to load it from the Metro dev server (ws://localhost:8081) — installed
-      # standalone it hangs on the splash screen forever (verified on device).
-      # assembleRelease embeds the JS bundle and is auto-signed with the
-      # generated debug keystore, so it installs and runs on any device with
-      # NO release keystore needed.
-      - name: Build APK (release variant, debug-signed — no keystore needed)
+      # assembleDebug keeps __DEV__=true (test ads, dev logs, readable stack
+      # traces) and is auto-signed with the generated debug keystore (no
+      # release keystore needed). plugins/with-debug-bundle.js sets
+      # `debuggableVariants = []` so the JS bundle is embedded — RN 0.7x+
+      # bridgeless falls back to the embedded bundle when Metro is NOT
+      # running, so the APK runs standalone on a device.
+      - name: Build debug APK (embedded bundle, debug-signed)
         working-directory: android
-        run: ./gradlew assembleRelease
+        run: ./gradlew assembleDebug
 
-      - name: Upload APK
+      - name: Verify JS bundle is embedded
+        working-directory: android
+        run: |
+          APK=$(ls app/build/outputs/apk/debug/*.apk)
+          echo "APK: $APK"
+          unzip -l "$APK" | grep -c 'assets/index.android.bundle' \
+            || (echo '::error::debug APK has no embedded JS bundle'; exit 1)
+
+      - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: app-release-apk
-          path: android/app/build/outputs/apk/release/*.apk
+          name: app-debug-apk
+          path: android/app/build/outputs/apk/debug/*.apk
           if-no-files-found: error

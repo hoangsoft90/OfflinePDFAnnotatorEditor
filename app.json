@@ -87,7 +87,8 @@
         }
       ],
       "./plugins/with-ads-kotlin-fix",
-      "./plugins/with-release-signing"
+      "./plugins/with-release-signing",
+      "./plugins/with-debug-bundle"
     ],
     "experiments": {
       "typedRoutes": true,
