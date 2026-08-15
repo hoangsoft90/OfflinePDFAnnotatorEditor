@@ -15,6 +15,19 @@ export async function atomicWrite(
   bytes: Uint8Array,
   options: AtomicWriteOptions = {}
 ): Promise<void> {
+  // SAF content:// URIs (picked via the document picker) cannot be written
+  // with the temp-file + rename dance: Directory.create rejects content:// and
+  // there is no rename over the provider's document. The picker has already
+  // granted write access to that exact URI, so write straight through — the
+  // SAF provider makes the write atomic on its side.
+  if (target.uri.startsWith('content://')) {
+    target.write(bytes);
+    if (options.verify !== false && target.size !== bytes.byteLength) {
+      throw new Error(`Write verification failed (${target.size}/${bytes.byteLength})`);
+    }
+    return;
+  }
+
   const dir = target.parentDirectory;
   if (!dir.exists) dir.create({ idempotent: true, intermediates: true });
 
