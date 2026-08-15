@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react';
+
 import type { PdfEngine } from '@/engine/types';
 
 /**
@@ -8,4 +10,12 @@ import type { PdfEngine } from '@/engine/types';
 export function PdfEngineHost({ engine }: { engine: PdfEngine }): null {
   void engine;
   return null;
+}
+
+/**
+ * Web counterpart of `PdfEngineHostView`: renders children unchanged (the web
+ * engine needs no hidden WebView), keeping the same component API as native.
+ */
+export function PdfEngineHostView({ children }: { engine: PdfEngine; children: ReactNode }) {
+  return <>{children}</>;
 }

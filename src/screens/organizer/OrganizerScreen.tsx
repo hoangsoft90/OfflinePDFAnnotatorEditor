@@ -5,8 +5,7 @@ import { ActivityIndicator, Alert, FlatList, Image, Pressable, StyleSheet, View 
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { PdfEngineHost } from '@/engine/PdfEngineHost';
+import { PdfEngineHostView } from '@/engine/PdfEngineHost';
 import { createPdfEngine } from '@/engine/pdfjs-engine';
 import type { PdfEngine } from '@/engine/types';
 import { BitmapCache } from '@/engine/bitmap-cache';
@@ -150,19 +149,19 @@ export function OrganizerScreen() {
 
   if (loading) {
     return (
-      <ThemedView color="background" style={styles.center}>
-        <ActivityIndicator size="large" color={palette.primary} />
-        <ThemedText type="small" color="textSecondary" style={{ marginTop: Spacing.three }}>
-          Đang tải trang…
-        </ThemedText>
-        <PdfEngineHost engine={engine} />
-      </ThemedView>
+      <PdfEngineHostView engine={engine}>
+        <View style={styles.center}>
+          <ActivityIndicator size="large" color={palette.primary} />
+          <ThemedText type="small" color="textSecondary" style={{ marginTop: Spacing.three }}>
+            Đang tải trang…
+          </ThemedText>
+        </View>
+      </PdfEngineHostView>
     );
   }
 
   return (
-    <ThemedView color="background" style={{ flex: 1 }}>
-      <PdfEngineHost engine={engine} />
+    <PdfEngineHostView engine={engine}>
       <SafeAreaView edges={['top']} style={styles.topBar}>
         <Pressable onPress={() => safeBack()} hitSlop={8} style={styles.iconBtn}>
           <Ionicons name="arrow-back" size={22} color={palette.text} />
@@ -231,7 +230,7 @@ export function OrganizerScreen() {
           );
         }}
       />
-    </ThemedView>
+    </PdfEngineHostView>
   );
 }
 

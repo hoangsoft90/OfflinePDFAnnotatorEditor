@@ -5,12 +5,11 @@ import { Pressable, StyleSheet, View, TextInput, ActivityIndicator, Alert } from
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
 import { PdfCanvas, type PdfCanvasHandle } from '@/components/pdf/PdfCanvas';
 import { AnnotationCanvas } from '@/components/pdf/AnnotationCanvas';
 import { AnnotationToolbar } from '@/components/pdf/AnnotationToolbar';
 import { SignaturePickerModal } from '@/components/pdf/SignaturePickerModal';
-import { PdfEngineHost } from '@/engine/PdfEngineHost';
+import { PdfEngineHostView } from '@/engine/PdfEngineHost';
 import { createPdfEngine } from '@/engine/pdfjs-engine';
 import { BitmapCache } from '@/engine/bitmap-cache';
 import { ThumbnailsSheet } from '@/components/pdf/ThumbnailsSheet';
@@ -396,44 +395,45 @@ export function ViewerScreen() {
 
   if (state === 'loading') {
     return (
-      <ThemedView color="background" style={styles.center}>
-        <ActivityIndicator size="large" color={palette.primary} />
-        <ThemedText type="small" color="textSecondary" style={{ marginTop: Spacing.three }}>
-          Đang mở PDF…
-        </ThemedText>
-        <PdfEngineHost engine={engine} />
-      </ThemedView>
+      <PdfEngineHostView engine={engine}>
+        <View style={styles.center}>
+          <ActivityIndicator size="large" color={palette.primary} />
+          <ThemedText type="small" color="textSecondary" style={{ marginTop: Spacing.three }}>
+            Đang mở PDF…
+          </ThemedText>
+        </View>
+      </PdfEngineHostView>
     );
   }
 
   if (state === 'error') {
     return (
-      <ThemedView color="background" style={styles.center}>
-        <Ionicons name="alert-circle-outline" size={44} color={palette.danger} />
-        <ThemedText type="subheading" style={{ marginTop: Spacing.three, textAlign: 'center' }}>
-          Không thể mở tài liệu
-        </ThemedText>
-        <ThemedText type="small" color="textSecondary" style={{ marginTop: Spacing.two, textAlign: 'center', paddingHorizontal: Spacing.four }}>
-          {error}
-        </ThemedText>
-        <View style={{ flexDirection: 'row', gap: Spacing.three, marginTop: Spacing.four }}>
-          <Pressable onPress={() => safeBack()} style={[styles.btn, { backgroundColor: palette.backgroundElement }]}>
-            <ThemedText type="smallBold">Quay lại</ThemedText>
-          </Pressable>
-          {docId ? (
-            <Pressable onPress={handleRemoveDoc} style={[styles.btn, { backgroundColor: palette.danger }]}>
-              <ThemedText type="smallBold" color="onPrimary">Xóa khỏi danh sách</ThemedText>
+      <PdfEngineHostView engine={engine}>
+        <View style={styles.center}>
+          <Ionicons name="alert-circle-outline" size={44} color={palette.danger} />
+          <ThemedText type="subheading" style={{ marginTop: Spacing.three, textAlign: 'center' }}>
+            Không thể mở tài liệu
+          </ThemedText>
+          <ThemedText type="small" color="textSecondary" style={{ marginTop: Spacing.two, textAlign: 'center', paddingHorizontal: Spacing.four }}>
+            {error}
+          </ThemedText>
+          <View style={{ flexDirection: 'row', gap: Spacing.three, marginTop: Spacing.four }}>
+            <Pressable onPress={() => safeBack()} style={[styles.btn, { backgroundColor: palette.backgroundElement }]}>
+              <ThemedText type="smallBold">Quay lại</ThemedText>
             </Pressable>
-          ) : null}
+            {docId ? (
+              <Pressable onPress={handleRemoveDoc} style={[styles.btn, { backgroundColor: palette.danger }]}>
+                <ThemedText type="smallBold" color="onPrimary">Xóa khỏi danh sách</ThemedText>
+              </Pressable>
+            ) : null}
+          </View>
         </View>
-        <PdfEngineHost engine={engine} />
-      </ThemedView>
+      </PdfEngineHostView>
     );
   }
 
   return (
-    <ThemedView color="background" style={{ flex: 1 }}>
-      <PdfEngineHost engine={engine} />
+    <PdfEngineHostView engine={engine}>
 
       {/* Top bar */}
       <SafeAreaView edges={['top']} style={styles.topBar}>
@@ -588,7 +588,7 @@ export function ViewerScreen() {
           onTargetTap={handleIntroTargetTap}
         />
       ) : null}
-    </ThemedView>
+    </PdfEngineHostView>
   );
 }
 

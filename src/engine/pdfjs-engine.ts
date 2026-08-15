@@ -62,8 +62,16 @@ export class WebViewPdfEngine implements PdfEngine {
     }
     if (msg.id === 'bridge-init') {
       if (msg.ok) {
+        const wasReady = this.ready;
         this.ready = true;
         this.readyWaiters.splice(0).forEach((fn) => fn());
+        // A second bridge-init means the WebView reloaded (process killed /
+        // remounted) and reset pdf.js state while we still hold openResult.
+        // Surface it so the stale-open path is audible instead of a silent
+        // black page. (Screens must keep the host mounted — see PdfEngineHostView.)
+        if (wasReady && this.openResult) {
+          console.warn('PDF engine WebView re-initialized while a document was open');
+        }
       }
       return;
     }

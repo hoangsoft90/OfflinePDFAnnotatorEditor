@@ -1,7 +1,9 @@
+import type { ReactNode } from 'react';
 import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { WebView, type WebViewMessageEvent } from 'react-native-webview';
 
+import { ThemedView } from '@/components/themed-view';
 import type { PdfEngine } from '@/engine/types';
 import { buildBridgeHtml } from '@/engine/pdfjs-html';
 import { loadPdfjsSources } from '@/engine/pdfjs-sources';
@@ -18,6 +20,24 @@ export function PdfEngineHost({ engine }: { engine: PdfEngine }) {
   // implementations are no-op hosts (web resolves PdfEngineHost.web.tsx).
   if (!(engine instanceof WebViewPdfEngine)) return null;
   return <WebViewHost engine={engine} />;
+}
+
+/**
+ * Wraps screen content with the engine host rendered at a FIXED position in
+ * the tree. Screens must not render `<PdfEngineHost>` inside conditional
+ * branches: toggling loading/error/ready unmounts and remounts the WebView,
+ * which resets pdf.js state (pdfDoc → null) while the engine still holds a
+ * stale `openResult` — every later `renderPage` then fails silently and the
+ * viewer shows a black page. Rendering the host exactly once (here, as the
+ * first child) keeps the WebView alive across all UI states.
+ */
+export function PdfEngineHostView({ engine, children }: { engine: PdfEngine; children: ReactNode }) {
+  return (
+    <ThemedView color="background" style={{ flex: 1 }}>
+      <PdfEngineHost engine={engine} />
+      {children}
+    </ThemedView>
+  );
 }
 
 function WebViewHost({ engine }: { engine: WebViewPdfEngine }) {
